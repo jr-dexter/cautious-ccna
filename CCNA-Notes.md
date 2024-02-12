@@ -1052,3 +1052,198 @@ show ip router ospf
  | C 	| 192.0.0.0 	| 223.255.255.255 |	Starts with bits 110 (Multicasts) |
  | D	| 224.0.0.0		| 239.255.255.255 | Starts with bits 1110 |
  | E	| 240.0.0.0 	| 255.255.255.255 | Starts with bits 11110 |
+
+
+
+# IP Routing Basics
+## Static Routes
+- Static routers on Point-To-Point Links can use the destination interface. There is expect to me only two hosts on a P2P links, so if the packet is not for me, it must be for you.
+- Static route for Multiple Access Links, ie THE REST. There is the possiblility that many host can recieve the packet. Result is to specify the testing IP Address instead of the interface. 
+
+
+```RTR(config)# ip route <network destination> <subnet mask of destination> {destination IP | destination interface}```
+
+### Verify
+```bash
+sh ip route
+sh ip route static
+```
+
+## Floating Static Route
+- Floating refers to the manual configuration of the routes Admin distance. 
+- Route Table numbers in the brackets. first number is the Administrative distance. lowest is best.
+
+## Routable addresses
+ - IPv4 / IPv6 are routable protocols
+ - Reaching address with the same network are within the same broadcast domain
+ - Reaching addresses outside of the network where the IP is assigned, route to the default gateway
+ - Reaching addresses outside of the default gateway router through the default route
+
+## What happens to a routed packet
+ - Compares its local address and determined the destination is not on-link -it routes to the default gateway
+ - Routing: process of forwarding packets between networks
+	- routing between networks
+	- _route_ table is different than a *_routing_* table
+- Requirements 
+	- routable packet (ipv4/v6)
+	- network address
+	- subnet mask
+	- next hop
+	- egress interface
+ - Orginal Ethernet frame is re-written to once it reaches a router
+	- The Layer 2 Src/Dest MAC will reflect each hop in the flow
+	- Layer 2 re-written at the outbound interface
+
+### Question
+In order for an address, assigned to a device, to be considered routable
+ - the address must have embedded within it a network idenfitifier
+ - address must be paired with some kind of mask
+
+## Where are the routes stored
+ ### Types of Routes
+  - Connected
+  - Static 
+	- Manually configured 
+  - Dynamic 
+	- learning from another router
+- Recursive route
+	- route that finds a match but the next hop address where to find the interface a route high in the routing table need to be used. Example, a route that leads to another route
+
+### Rules of Routing
+	- only match their active protocols
+		- if ipv6 route is received but ipv6 is not running, this packet is dropped
+	- router will only use routes with reachable "next hops"
+		- either direct or recursive
+	- next hop of paired with usable Layer 2 address
+		- if an ARP reply is unfulfilled, this layer 2 address is unknown
+		- _encasulation failed_
+ 			- results from an unusable layer 2 address
+	- routers will only use the "best" routes
+		- static routes linger in the routing table after its interface is admin-down
+	- Routes must be "beleivable" - is it still valid.
+
+## Redirect Debug logging to buffer
+ ```
+	no logging console debug
+ 	logging buffer debug
+	# Agressive debug to turn on
+	debug ip packet
+	# Clear the buffer log
+	clear log
+	# Remove debug
+	undebug all
+	# View collected logs
+	show log
+```
+
+### Switching within Routers
+	- Process-based switches
+		- original CPU-based switch architecture. each packet interupts the CPU, triggers a ARP, prcoess reply and passes to routing table
+	- Fast Switching
+		- cache created to contain next hops/ interface information. reduces CPU interupts, but unknown info is still sent to CPU
+	- Cisco Express Forwarding
+		- copy of ip routing
+		- creates a table of next hop/interface matching as well as mac address/interface table
+		- CEF for forwarding
+		- FIB (forward information base) - interface to map table
+``` sh ip cef ```
+
+#### CEF Components
+	- Populated with Layer 2 Adjacency Information
+	- Populated by Layer 2 Tables
+		- ARP Table
+		- Frame-Relay
+		- P2P Header Formats
+``` bash 
+show adjacency <intf type/number > [summary|detail]
+show adjacency detail
+```
+
+### Adjacency Types
+- Glean
+	- CEF has learned of a subnet and a host in that network. if other hosts are made available, this glean adjacency is use to ask the CEF to ARP for the address
+- Null
+	- packets are dropped. can be used as access filtering
+- Drop
+	- dropped packets
+- Discard
+	- dropped based off policy
+- Punt
+	- _Which type of CEF adjacency would, if matched by a packet, force that packet to be processed by the device's CPU?_
+	- Inconnect Layer 2 information, passes work off to higher level switch to determine
+
+## How are Routes Selected
+	- Admin distance is used to compare routes learned via different protocols
+	- Metric is used to compare routes learned via same protocol
+#### Example
+```
+R1 learns the following routes via dynamic routing protocols:
+
+192.168.0.0/25 via RIP, metric 4
+192.168.0.0/30 via EIGRP, metric 1234
+192.168.0.0/28 via OSPF, metric 10
+192.168.0.0/16 via eBGP, metric 1
+An admin also configured a static route to 192.0.0.0/8.
+
+Which route(s) will R1 add to its routing table?
+```
+ - group/compare by protocol
+
+| Protocol | Admin Distance Value | 
+|----------| -------------------- |
+| Connected     |   0                 |
+| Static        |   1                 |
+| EIGRP (Int)   |   90                |
+| OSPF          |   110               |   
+| IS-IS         |   115                 |
+| RIP           |   120                 |
+| EIGRP (Ext)   |    170         |
+| iBGP/eBGP     |   200/20              |
+| Unreachable   | 255                 |
+
+### Metrics
+ 1. Administrative distance is used between differenct routing protocols
+ 2. Metrics are used between same protocol
+
+ - Used for best path selection process
+ - IGPs use metrics for shortest path calculation
+ - lower values is preferred
+ - Depends on Routing Protocol Architecture
+    - EIGRP = (DISTANCE) link bankdwidth + delay
+    - RIP = hop count
+    - OSPF = (COST) link bandwidth
+
+## Contrasting ROuting Protocols:: IGP/EGP
+ - Interior Gateway Protocol
+	- Within an Autonomous System
+	- Fast Convergence
+ - Exterior Gateway Protocol
+	- BGP
+	- Secure 
+	- Large quantity of routes
+
+### Protocol Charactistics
+ - Operational 
+	- Distance Vector (IGP)
+	- Link-State (IGP)
+	- Advanced Distance Vector (IGP)
+	- Path Vector (EGP)
+ - 	Dat Points
+	- Neighbor Requirements
+	- Route Maintenance
+	- Visibility into Topology
+	- Data Structures ( Tables, DBs)
+ - Updates
+	- Frequency
+		- Periodic / Triggered
+	-  Size
+		- Incremental / Full	
+
+### Distance Vector
+|  Protocol  |    Metric   | Neighbor Reqs      | Route Maintenance           | Visibility to topology   | route mgmt data structure   |
+|----|----|----|----|----|---|
+|  RIP / IGRP |  Distance  | None               | Resend routes periodically  | Directly connected routers  | db of learned routes |
+| OSPF / IS-IS     | Link State  | Required     |  periodic keep-alives / regenerate LSAs | complete topology | db of link state, neighbor table , SPF (shortest path first) Tree |
+| EIGRP       | Advanced Distance Vector | Required |periodic keep-alives | directly connected routers | topology of learned routes / neighbor table | 
+| BGP      | Path Vector | Required/Exterior | Period keep-alives | no knowledge of topology- only next hop | neightbor table / bgp table | 
+

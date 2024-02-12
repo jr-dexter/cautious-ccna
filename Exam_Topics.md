@@ -1,13 +1,13 @@
 # Network Fundamentals (20%)
 - Explain the role and function of network components
-- Routers
-- Layer 2 and Layer 3 switches
-- Next-generation firewalls and IPS
-- Access points
-- Controllers (Cisco DNA Center and WLC)
-- Endpoints
-- Servers
-- PoE
+    - Routers
+    - Layer 2 and Layer 3 switches
+    - Next-generation firewalls and IPS
+    - Access points
+    - Controllers (Cisco DNA Center and WLC)
+    - Endpoints
+    - Servers
+    - PoE
 - Describe characteristics of network topology architectures
     - Two-tier
     - Three-tier

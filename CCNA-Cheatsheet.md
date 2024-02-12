@@ -194,6 +194,7 @@ Device(config-line)#logging buffer
 
 ### Distance Vector
 |  Protocol  |    Metric   | Neighbor Reqs      | Route Maintenance           | Visibility to topology   | route mgmt data structure   |
+|----|----|----|----|----|---|
 |  RIP / IGRP |  Distance  | None               | Resend routes periodically  | Directly connected routers  | db of learned routes |
 | OSPF / IS-IS     | Link State  | Required     |  periodic keep-alives / regenerate LSAs | complete topology | db of link state, neighbor table , SPF (shortest path first) Tree |
 | EIGRP       | Advanced Distance Vector | Required |periodic keep-alives | directly connected routers | topology of learned routes / neighbor table | 
